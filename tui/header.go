@@ -37,41 +37,91 @@ func(h *HeaderDropdown) handleDropdownSelection(
 func GetHeaderDropdown(
   app  *TermLinkTUI,
 ) *HeaderDropdown {
-  title := "▼ TermLink"
+  title := "[green]▼ [teal]TermLink[:]"
 
-  newMsgText := utils.Bullet(
+  newMsgBullet := utils.Bullet(
     " New Message  ",
     "green",
     "black",
   )
-  inboxText := utils.Bullet(
+  inboxBullet := utils.Bullet(
     " Inbox        ",
-    "green",
+    "teal",
     "black",
   )
-  contactsText := utils.Bullet(
+  contactsBullet := utils.Bullet(
     " Contacts     ",
     "green",
     "black",
   )
-  chatroomsText := utils.Bullet(
+  chatroomsBullet := utils.Bullet(
     " Chatrooms    ",
-    "green",
+    "teal",
     "black",
   )
-  settingsText := utils.Bullet(
+  settingsBullet := utils.Bullet(
     " Settings     ",
     "green",
     "black",
   )
 
+  curPage := app.currentPage
+  utils.Warn("Current PAge: %s", curPage.String())
+  switch curPage.String() {
+  case pNewMessage.String():
+    newMsgBullet.UpdateColors(
+      "red",
+      "black",
+    )
+    newMsgBullet.UpdateContent(
+      " - Contacts   ",
+    )
+    newMsgBullet.Build()
+  case pInbox.String():
+    inboxBullet.UpdateColors(
+      "red",
+      "black",
+    )
+    inboxBullet.UpdateContent(
+      " - Inbox     ",
+    )
+    inboxBullet.Build()
+  case pContact.String():
+    contactsBullet.UpdateColors(
+      "red",
+      "black",
+    )
+    contactsBullet.UpdateContent(
+      " - Contacts  ",
+    )
+    contactsBullet.Build()
+  case pChatrooms.String():
+    chatroomsBullet.UpdateColors(
+      "red",
+      "black",
+    )
+    chatroomsBullet.UpdateContent(
+      " - Chatrooms ",
+    )
+    chatroomsBullet.Build()
+  case pSettings.String():
+    settingsBullet.UpdateColors(
+      "red",
+      "black",
+    )
+    settingsBullet.UpdateContent(
+      " - Settings  ",
+    )
+    settingsBullet.Build()
+  }
+
   dropdown := &HeaderDropdown{
     app        : app,
-    newMessage : newMsgText,
-    inbox      : inboxText,
-    contacts   : contactsText,
-    chatrooms  : chatroomsText,
-    settings   : settingsText,
+    newMessage : newMsgBullet,
+    inbox      : inboxBullet,
+    contacts   : contactsBullet,
+    chatrooms  : chatroomsBullet,
+    settings   : settingsBullet,
   }
 
   dropdown.dropdown = tview.NewDropDown().
@@ -79,11 +129,11 @@ func GetHeaderDropdown(
     SetLabelColor(tcell.ColorTeal).
     SetOptions(
       []string{
-        newMsgText.View(),
-        inboxText.View(),
-        contactsText.View(),
-        chatroomsText.View(),
-        settingsText.View(),
+        newMsgBullet.Item(),
+        inboxBullet.Item(),
+        contactsBullet.Item(),
+        chatroomsBullet.Item(),
+        settingsBullet.Item(),
       },
       dropdown.handleDropdownSelection,
     )
@@ -127,13 +177,11 @@ func GetHeader(
 
   btnStyle := tcell.StyleDefault.
     Background(tcell.ColorDarkGreen).
-    Foreground(tcell.ColorDarkGray).
-    Bold(true)
+    Foreground(tcell.ColorDarkGray)
   btnSpacer := tview.NewTextView().
     SetDynamicColors(true).
     SetTextAlign(tview.AlignCenter).
-    SetText(" | ")
-
+    SetText("[teal]｜[:]")
 
   helpText := utils.Bullet(
     "    Help    ",
@@ -151,19 +199,19 @@ func GetHeader(
     "black",
   )
 
-  helpBtn := tview.NewButton(helpText.View()).
+  helpBtn := tview.NewButton(helpText.Item()).
     SetSelectedFunc(func(){
       utils.Log("[yellow] -> Help")
     }).
     SetStyle(btnStyle)
 
-  closeBtn := tview.NewButton(closeText.View()).
+  closeBtn := tview.NewButton(closeText.Item()).
     SetSelectedFunc(func(){
       header.app.Stop()
     }).
     SetStyle(btnStyle)
 
-  logoutBtn := tview.NewButton(logoutText.View()).
+  logoutBtn := tview.NewButton(logoutText.Item()).
     SetSelectedFunc(func(){
       if err := header.app.db.Signout(); err != nil {
         header.app.SetRoot(MessageModal(
@@ -193,9 +241,9 @@ func GetHeader(
       tview.NewFlex().
         AddItem(tview.NewBox(), 0, 1, false).
         AddItem(helpBtn, helpText.Length(), 0 ,false).
-        AddItem(btnSpacer, 3, 0, false).
+        AddItem(btnSpacer, 2, 0, false).
         AddItem(closeBtn, closeText.Length(), 0, false).
-        AddItem(btnSpacer, 3, 0, false).
+        AddItem(btnSpacer, 2, 0, false).
         AddItem(logoutBtn, logoutText.Length(), 0, false).
         AddItem(tview.NewBox(), 2, 0, false),
       0, 1, false,

@@ -19,7 +19,7 @@ const (
 
 func(p Page) String() string {
   return [...]string{
-    "pAtuh",
+    "pAuth",
     "pNewMessage",
     "pInbox",
     "pContacts",

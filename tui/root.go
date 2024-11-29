@@ -61,6 +61,7 @@ func(tui *TermLinkTUI) AwaitForAuthentication() *TermLinkTUI{
         // By creating&adding our HEader, then reattaching pages into a dedicated Flex view that
         // will take up the rest of the page
         utils.Warn("User Successfully Logged in!")
+        tui.currentPage = pContact
 
         header := GetHeader(tui, tui.kill)
         tui.header = header
@@ -74,17 +75,7 @@ func(tui *TermLinkTUI) AwaitForAuthentication() *TermLinkTUI{
             true, false,
           )
 
-        tui.currentPage = pContact
-        // tui.SwitchToPage(pContact)
-        tui.app.QueueUpdateDraw(func(){
-          tui.pages.SwitchToPage(pContact.String())
-          tui.SetFocus(tui.termPages[pContact].StartFocus())
-        })
-
-        // for title, page := range tui.termPages {
-        //   tui.pages.AddPage(title.String(), page.GenerateUI(), true, false)
-        // }
-
+        tui.SwitchToPage(pContact)
         return 
       }
     }
@@ -94,10 +85,9 @@ func(tui *TermLinkTUI) AwaitForAuthentication() *TermLinkTUI{
 }
 
 func(tui *TermLinkTUI) SwitchToPage(page Page) {
-  tui.currentPage = page
   tui.app.QueueUpdateDraw(func(){
-    tui.pages.SwitchToPage(page.String())
-    tui.HandleInput()
+    tui.pages.SwitchToPage(pContact.String())
+    tui.SetFocus(tui.termPages[pContact].StartFocus())
   })
 }
 
