@@ -29,7 +29,8 @@ func main(){
   tui.GetTermLinkTUI(
     build, db,
   ).
-    GeneratePages().
+    GenerateAuthPage().
     HandleInput().
+    AwaitForAuthentication().
     Start()
 }

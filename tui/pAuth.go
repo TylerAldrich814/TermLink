@@ -68,7 +68,7 @@ func( auth *AuthPage) authCallback(){
 
   if auth.kind == Signup {
     if err := auth.app.db.Signup(email, passw); err != nil {
-      Error("Failed to Sign up: %v", err)
+      utils.Error("Failed to Sign up: %v", err)
       auth.app.SetRoot(MessageModal(
         auth.kind.String() + " Error",
         fmt.Sprintf("An Error Occurred: %s", err.Error()),
@@ -78,11 +78,11 @@ func( auth *AuthPage) authCallback(){
       ))
       return
     }
-    Log("Successfully Signed up!")
+    utils.Log("Successfully Signed up!")
   } else { // Login
-    Log("UserLogin: %s - %s", email, passw)
+    utils.Log("UserLogin: %s - %s", email, passw)
     if err := auth.app.db.Login(email, passw); err != nil {
-      Error("Failed to Log into account: %v", err)
+      utils.Error("Failed to Log into account: %v", err)
       auth.app.SetRoot(MessageModal(
         auth.kind.String() + " Error",
         fmt.Sprintf("An Error Occurred: %s", err.Error()),
@@ -92,7 +92,7 @@ func( auth *AuthPage) authCallback(){
       ))
       return
     }
-    Log("Successfully Logged back in!")
+    utils.Log("Successfully Logged back in!")
   }
 }
 
@@ -109,10 +109,12 @@ func( auth *AuthPage) switchKind(){
     auth.submitButton.SetLabel(Signup.String())
     auth.switchButton.SetLabel(signupToLogin)
   }
+  auth.focusId = 0
+  auth.ShiftFocus()
 }
 
-func(auth *AuthPage) GetPageKind() utils.Page {
-  return utils.Auth
+func(auth *AuthPage) GetPageKind() Page {
+  return pAuth
 }
 
 func(auth *AuthPage) GenerateUI() tview.Primitive{
@@ -125,7 +127,7 @@ func(auth *AuthPage) GenerateUI() tview.Primitive{
     AddItem(form, 6, 1, false).
     AddItem(
       tview.NewFlex().
-        AddItem(tview.NewBox(), 14, 0, false).
+        AddItem(tview.NewBox(), 8, 0, false).
         AddItem(auth.submitButton, 0, 1, false).
         AddItem(tview.NewBox(), 1, 0, false).
         AddItem(auth.quitButton, 0, 1, false).
@@ -135,9 +137,9 @@ func(auth *AuthPage) GenerateUI() tview.Primitive{
     AddItem(tview.NewBox(), 1, 0, false).
     AddItem(
       tview.NewFlex().
-        AddItem(tview.NewBox(), 10, 0, false).
+        AddItem(tview.NewBox(), 8, 0, false).
         AddItem(auth.switchButton, 0, 1, false).
-        AddItem(tview.NewBox(), 4, 0, false),
+        AddItem(tview.NewBox(), 8, 0, false),
       1, 0, false,
     )
   page.SetBorder(true).
@@ -219,10 +221,10 @@ func GetAuthPage(
   }
   auth.emailForm = tview.NewInputField().
     SetLabel("Email").
-    SetFieldWidth(30)
+    SetFieldWidth(26)
   auth.passwordForm = tview.NewInputField().
     SetLabel("Password").
-    SetFieldWidth(30).
+    SetFieldWidth(26).
     SetMaskCharacter('*')
 
   auth.submitButton = tview.NewButton(kind.String()).

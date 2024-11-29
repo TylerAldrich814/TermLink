@@ -1,23 +1,22 @@
-package tui
+package utils
 
 import (
 	"fmt"
 	"sync"
 	"time"
 
-	"github.com/TylerAldrich814/TermLink/utils"
 	"github.com/rivo/tview"
 )
 
 type LogMessage struct {
-  level   utils.DebugLevel
+  level   DebugLevel
   message string
 }
 
 type DebugMessage struct {
   time    time.Time
   message string
-  level   utils.DebugLevel
+  level   DebugLevel
 }
 
 func( d *DebugMessage) String() string {
@@ -44,9 +43,9 @@ var (
 
 func InitializeDebugWindow(
   app  *tview.Application,
-  mode utils.Build,
+  mode Build,
 ) {
-  if mode != utils.DevBuild {
+  if mode != DevBuild {
     return
   }
   startOnce.Do(func(){
@@ -125,7 +124,7 @@ func(d *DebugWindow) log(message LogMessage) {
 func Log(format string, f ...any){
   if instance == nil { return } 
   GetInstance().log(LogMessage{
-    utils.Log,
+    DebugLog,
     fmt.Sprintf(format, f...),
   })
 }
@@ -134,7 +133,7 @@ func Log(format string, f ...any){
 func Warn(format string, f ...any){
   if instance == nil { return } 
   GetInstance().log(LogMessage{
-    utils.Warn,
+    DebugWarn,
     fmt.Sprintf(format, f...),
   })
 }
@@ -143,7 +142,7 @@ func Warn(format string, f ...any){
 func Error(format string, f ...any){
   if instance == nil { return } 
   GetInstance().log(LogMessage{
-    utils.Error,
+    DebugError,
     fmt.Sprintf(format, f...),
   })
 }

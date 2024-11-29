@@ -4,17 +4,17 @@ import (
 	"errors"
 	"time"
 
-  // "github.com/supabase-community/gotrue-go/types"
+  "github.com/TylerAldrich814/TermLink/utils"
   "github.com/supabase-community/supabase-go"
 )
 
 const (
-  fakeLogin = false
+  fakeLogin = true
   fakeUsers = false
   fakseMsgs = false
 )
 
-type Supabase struct {
+type Supabase  struct {
   client       *supabase.Client
   url          string
   anonKey      string
@@ -67,7 +67,7 @@ func InitSupbase(
       )
       go func(){
         // TODO: Make Token Refresh Call to Supbase
-
+        db.authChannel <-struct{}{}
       }()
     }
   }
@@ -82,3 +82,12 @@ func(client *Supabase) RefreshTokens() error {
   return nil
 }
 
+func(db *Supabase) GetAuthChannel() chan struct{} {
+  return db.authChannel
+}
+func(db *Supabase) CloseAuthChannel()  {
+  if db.authChannel != nil {
+    utils.Warn("Supbase.AuthChannel is now closed")
+    close(db.authChannel)
+  }
+}

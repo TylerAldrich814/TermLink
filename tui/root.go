@@ -15,25 +15,25 @@ type TermLinkTUI struct {
   db          *db.Supabase
   pages       *tview.Pages
   rootWindow  *tview.Flex
-  debugWindow *DebugWindow
+  debugWindow *utils.DebugWindow
 
   header      *Header
-  termPages   map[utils.Page]TermLinkPage
-  currentPage utils.Page
+  termPages   map[Page]TermLinkPage
+  currentPage Page
   kill        chan struct{}
   wg          sync.WaitGroup
 }
 
-func(tui *TermLinkTUI) GeneratePages() *TermLinkTUI {
+func(tui *TermLinkTUI) GenerateAuthPage() *TermLinkTUI {
   if tui.app == nil {
     panic("TermLinkTUI hasn't been initialized yet")
   }
 
-  tui.termPages[utils.Auth] = GetAuthPage(tui, Signup)
+  authPage := GetAuthPage(tui, Signup)
 
-  for title, page := range tui.termPages {
-    tui.pages.AddPage(title.String(), page.GenerateUI(), true, false)
-  }
+  tui.termPages[pAuth] = authPage
+  tui.pages.AddPage(pAuth.String(), authPage.GenerateUI(), true, false)
+
 
   tui.pages.SwitchToPage(tui.currentPage.String())
   return tui
@@ -45,6 +45,60 @@ func(tui *TermLinkTUI) HandleInput() *TermLinkTUI {
     return event
   })
   return tui
+}
+
+// A Go Routine that's attached to Supabase.AuthChannel - When a user successfully signs in.
+// This Channel will be triggered, which will tell the rest of the app that the User is now
+// Authenticated. Where we can then load the rest of the applicaiton.
+func(tui *TermLinkTUI) AwaitForAuthentication() *TermLinkTUI{
+  go func(){
+    utils.Warn("Awaiting for User Authentication...")
+    authChannel := tui.db.GetAuthChannel()
+    for {
+      select {
+      case <-authChannel:
+        // When authChannel is received from Supabase. We then update the structure of TermLink
+        // By creating&adding our HEader, then reattaching pages into a dedicated Flex view that
+        // will take up the rest of the page
+        utils.Warn("User Successfully Logged in!")
+
+        header := GetHeader(tui, tui.kill)
+        tui.header = header
+
+        contactsPage := GetContactsPage(tui, header, tui.kill)
+
+        tui.termPages[pContact] = contactsPage
+        tui.pages.AddPage(
+            pContact.String(), 
+            contactsPage.GenerateUI(), 
+            true, false,
+          )
+
+        tui.currentPage = pContact
+        // tui.SwitchToPage(pContact)
+        tui.app.QueueUpdateDraw(func(){
+          tui.pages.SwitchToPage(pContact.String())
+          tui.SetFocus(tui.termPages[pContact].StartFocus())
+        })
+
+        // for title, page := range tui.termPages {
+        //   tui.pages.AddPage(title.String(), page.GenerateUI(), true, false)
+        // }
+
+        return 
+      }
+    }
+  }()
+
+  return tui
+}
+
+func(tui *TermLinkTUI) SwitchToPage(page Page) {
+  tui.currentPage = page
+  tui.app.QueueUpdateDraw(func(){
+    tui.pages.SwitchToPage(page.String())
+    tui.HandleInput()
+  })
 }
 
 func(tui *TermLinkTUI) Start() {
@@ -85,7 +139,7 @@ func( tui *TermLinkTUI) ResetMainRoot() {
 }
 
 // Changes the Root View to the provided Page.
-func(tui *TermLinkTUI) ChangePage(page utils.Page) error {
+func(tui *TermLinkTUI) ChangePage(page Page) error {
   termPage := tui.termPages[page]
   if termPage == nil {
     return fmt.Errorf("The Page %s doesn't exist yet", page.String())
@@ -103,17 +157,17 @@ func GetTermLinkTUI(
   app := tview.NewApplication().
     EnableMouse(true).
     EnablePaste(true)
-  InitializeDebugWindow(app, mode)
+  utils.InitializeDebugWindow(app, mode)
 
   tl := &TermLinkTUI{ 
     app         : app,
     db          : db,
     pages       : tview.NewPages(),
-    termPages   : map[utils.Page]TermLinkPage{},
-    currentPage : utils.Auth,
+    termPages   : map[Page]TermLinkPage{},
+    currentPage : pAuth,
     rootWindow  : tview.NewFlex(),
     kill        : make(chan struct{}),
-    debugWindow : GetInstance(),
+    debugWindow : utils.GetInstance(),
   }
 
   tl.rootWindow.

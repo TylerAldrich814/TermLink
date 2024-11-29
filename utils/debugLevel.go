@@ -7,26 +7,26 @@ type DebugLevel uint
 
 
 const (
-  Log DebugLevel = iota+1
-  Warn
-  Error
+  DebugLog DebugLevel = iota+1
+  DebugWarn
+  DebugError
 )
 
 func(l DebugLevel)String() string {
   return [...]string{
-    "Log",
-    "Warn",
-    "Error",
+    "DebugLog",
+    "DebugWarn",
+    "DebugError",
   }[l-1]
 }
 
 func(l DebugLevel) Tag() string {
   switch l.String(){
-  case "Log":
+  case "DebugLog":
     return "[green]"
-  case "Warn":
+  case "DebugWarn":
     return "[yellow]"
-  case "Error":
+  case "DebugError":
     return "[red]"
   default:
     return "[darkred]"
@@ -39,11 +39,11 @@ func(l DebugLevel) Idx() uint {
 
 func(l DebugLevel) Color() tcell.Color {
   switch l.String() {
-  case "Log":
+  case "DebugLog":
     return tcell.ColorGreen
-  case "Warn":
+  case "DebugWarn":
     return tcell.ColorYellow
-  case "Error":
+  case "DebugError":
     return tcell.ColorRed
   default:
     return tcell.ColorDarkRed

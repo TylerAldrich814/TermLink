@@ -1,6 +1,9 @@
 package db
 
 import (
+	"errors"
+
+	"github.com/TylerAldrich814/TermLink/utils"
 	"github.com/supabase-community/gotrue-go/types"
 )
 
@@ -35,6 +38,7 @@ func(db *Supabase) TokenSignin() error {
 
   db.client.UpdateAuthSession(res.Session)
   db.client.EnableTokenAutoRefresh(res.Session)
+  db.authChannel <- struct{}{}
 
   return nil
 }
@@ -48,8 +52,22 @@ func(db *Supabase) Login(email, password string) error {
   if err := db.session.UpdateCurrentSession(res); err != nil {
     return err
   }
-  // db.client.UpdateAuthSession(res.Session)
-  // db.client.EnableTokenAutoRefresh(res.Session)
+  db.client.UpdateAuthSession(res.Session)
+  db.client.EnableTokenAutoRefresh(res.Session)
+  db.authChannel <- struct{}{}
+
+  return nil
+}
+
+func(db *Supabase) Signout() error {
+  if err := db.client.Auth.Logout(); err != nil {
+    utils.Error("Failed to log user out: %v", err)
+    return errors.New("Logout Failure")
+  }
+  if err := db.session.StoreLoggedoutSession(); err != nil {
+    utils.Error("Failed to store Loggedout Session: %v", err)
+    return errors.New("Store Logged Out Session Error")
+  }
 
   return nil
 }
