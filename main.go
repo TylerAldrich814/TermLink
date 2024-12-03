@@ -14,16 +14,16 @@ import (
 func main(){
   err := godotenv.Load()
   if err != nil {
-    panic(fmt.Sprintf("Error loading .env file: %v", err))
+    panic(fmt.Sprintf("Error loading .env file: %w", err))
   }
   build := utils.Mode(os.Getenv("BUILD"))
 
-  db, err := db.InitSupbase(
+  db, err := db.InitDatabase(
     os.Getenv("SUPABASE_URL"),
     os.Getenv("SUPABASE_ANON"),
   )
   if err != nil {
-    panic(fmt.Sprintf("Failed to create Supabase Client: %v", err))
+    panic(fmt.Sprintf("Failed to create Database Client: %w", err))
   }
 
   tui.GetTermLinkTUI(

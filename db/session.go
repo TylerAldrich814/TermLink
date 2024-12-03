@@ -66,7 +66,7 @@ func(session *UserSession) UpdateCurrentSession(
   return nil
 }
 
-// Attempts to extract a UserID from the JWT token provided by Supabase.
+// Attempts to extract a UserID from the JWT token provided by Database.
 func(session *UserSession) ExtractUserID()( string,error ){
   token, _, err := jwt.NewParser().ParseUnverified(session.AccessToken, jwt.MapClaims{})
   if err != nil {
@@ -90,13 +90,13 @@ func(session *UserSession) ExtractUserID()( string,error ){
 func(session *UserSession) StoreUserSession() error {
   file, err := os.Create(filePath)
   if err != nil {
-    return fmt.Errorf("Failed to store UserSession: %v", err)
+    return fmt.Errorf("Failed to store UserSession: %w", err)
   }
   defer file.Close()
 
   encoder := json.NewEncoder(file)
   if err := encoder.Encode(session); err != nil {
-    return fmt.Errorf("Failed to Write UserSession: %v", err)
+    return fmt.Errorf("Failed to Write UserSession: %w", err)
   }
   return nil
 }
@@ -106,7 +106,7 @@ func(session *UserSession) StoreUserSession() error {
 func(session *UserSession) StoreLoggedoutSession() error {
   file, err := os.Create(filePath)
   if err != nil {
-    return fmt.Errorf("Failed to store Logged Out User Session: %v", err)
+    return fmt.Errorf("Failed to store Logged Out User Session: %w", err)
   }
   defer file.Close()
 
@@ -118,14 +118,14 @@ func(session *UserSession) StoreLoggedoutSession() error {
 
   encoder := json.NewEncoder(file)
   if err := encoder.Encode(loggedOutSession); err != nil {
-    return fmt.Errorf("Failed to Write Logged out UserSession: %v", err)
+    return fmt.Errorf("Failed to Write Logged out UserSession: %w", err)
   }
   return nil
 }
 
 // Function to test if the users SessionToken is expired or will be expired soon.
 // If so, attempts to refresh the users RefreshTokens
-func(session *UserSession) EnsureValidSession(db *Supabase) error {
+func(session *UserSession) EnsureValidSession(db *Database) error {
   if !time.Now().After(session.ExpiresAt.Add(-time.Minute * 5)){
     return nil
   }
@@ -140,7 +140,7 @@ func(session *UserSession) EnsureValidSession(db *Supabase) error {
 
 // Go Routine for automatically refreshing user token in the background.
 func(session *UserSession) StartAutoTokenRefresh(
-  db              *Supabase,
+  db              *Database,
   refreshInterval time.Duration,
 ){
   ticker := time.NewTicker(refreshInterval)
@@ -150,7 +150,7 @@ func(session *UserSession) StartAutoTokenRefresh(
       case <-ticker.C:
         err := session.EnsureValidSession(db)
         if err != nil {
-          log.Printf("Failed to Refresh Token: %v", err)
+          log.Printf("Failed to Refresh Token: %w", err)
         }
       case <-db.killRefresh:
         ticker.Stop()

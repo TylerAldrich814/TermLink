@@ -49,9 +49,11 @@ func(c *ConversationType) UnmarshalJSON(data []byte) error {
 
 type Conversations struct {
   ID             string           `json:"id"`
-  Type           ConversationType `json:"type"`
   CreatedAt      time.Time        `json:"created_at"`
+  Type           ConversationType `json:"type"`
+  UserID         string           `json:"user_id"`
   LastSentUserID string           `json:"last_sent_user_id"`
+  OtherUserID    string           `json:"other_user_id"`
 }
 
 // For Creating a new Direct; user to user Conversation. 
@@ -62,14 +64,14 @@ type Conversations struct {
 //  - Create a new participant row item for the conversation creator.
 //  - Create a new participant row item for the invitee.
 // and finally, returns the conversation_id if successful.
-func(db *Supabase) CreateNewDirectConversation(
+func(db *Database) CreateNewDirectConversation(
   invitee_id string,
 )( string,error ){
   if invitee_id == "" {
     return "", fmt.Errorf("InviteeID Cannot be empty")
   }
 
-  res := db.client.Rpc(
+  res := db.supabase.Rpc(
     "create_direct_conversation",
     "",
     struct{

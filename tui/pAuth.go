@@ -69,10 +69,10 @@ func( auth *AuthPage) authCallback(){
 
   if auth.kind == Signup {
     if err := auth.app.db.Signup(email, passw); err != nil {
-      utils.Error("Failed to Sign up: %v", err)
+      utils.Error("Failed to Sign up: %w", err)
       auth.app.SetRoot(MessageModal(
         auth.kind.String() + " Error",
-        fmt.Sprintf("An Error Occurred: %s", err.Error()),
+        fmt.Sprintf("An Error Occurred: %w", err),
         func(){
           auth.app.ResetMainRoot()
         },
@@ -83,7 +83,7 @@ func( auth *AuthPage) authCallback(){
   } else { // Login
     utils.Log("UserLogin: %s - %s", email, passw)
     if err := auth.app.db.Login(email, passw); err != nil {
-      utils.Error("Failed to Log into account: %v", err)
+      utils.Error("Failed to Log into account: %w", err)
       auth.app.SetRoot(MessageModal(
         auth.kind.String() + " Error",
         fmt.Sprintf("An Error Occurred: %s", err.Error()),
@@ -246,13 +246,10 @@ func GetAuthPage(
     app  : tui,
     kind : kind,
   }
-  width := 48
   auth.emailForm = tview.NewInputField().
-    SetLabel("Email").
-    SetFieldWidth(width)
+    SetLabel("Email")
   auth.passwordForm = tview.NewInputField().
     SetLabel("Password").
-    SetFieldWidth(width).
     SetMaskCharacter('*')
 
   auth.submitButton = tview.NewButton(kind.String()).

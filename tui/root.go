@@ -12,7 +12,7 @@ import (
 
 type TermLinkTUI struct {
   app         *tview.Application
-  db          *db.Supabase
+  db          *db.Database
   pages       *tview.Pages
   rootWindow  *tview.Flex
   debugWindow *utils.DebugWindow
@@ -47,7 +47,7 @@ func(tui *TermLinkTUI) HandleInput() *TermLinkTUI {
   return tui
 }
 
-// A Go Routine that's attached to Supabase.AuthChannel - When a user successfully signs in.
+// A Go Routine that's attached to Database.AuthChannel - When a user successfully signs in.
 // This Channel will be triggered, which will tell the rest of the app that the User is now
 // Authenticated. Where we can then load the rest of the applicaiton.
 func(tui *TermLinkTUI) AwaitForAuthentication() *TermLinkTUI{
@@ -57,7 +57,7 @@ func(tui *TermLinkTUI) AwaitForAuthentication() *TermLinkTUI{
     for {
       select {
       case <-authChannel:
-        // When authChannel is received from Supabase. We then update the structure of TermLink
+        // When authChannel is received from Database. We then update the structure of TermLink
         // By creating&adding our HEader, then reattaching pages into a dedicated Flex view that
         // will take up the rest of the page
         utils.Warn("User Successfully Logged in!")
@@ -143,7 +143,7 @@ func(tui *TermLinkTUI) ChangePage(page Page) error {
 
 func GetTermLinkTUI(
   mode utils.Build,
-  db   *db.Supabase,
+  db   *db.Database,
 ) *TermLinkTUI {
   app := tview.NewApplication().
     EnableMouse(true).
@@ -164,7 +164,7 @@ func GetTermLinkTUI(
   go func(){
     err := db.TrySession()
     if err != nil {
-      utils.Error("Failed to obtain User Session: %v", err)
+      utils.Error("Failed to obtain User Session: %w", err)
     }
   }()
 

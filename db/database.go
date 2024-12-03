@@ -1,21 +1,23 @@
 package db
 
 import (
+	"database/sql"
 	"errors"
 	"time"
 
-  "github.com/TylerAldrich814/TermLink/utils"
-  "github.com/supabase-community/supabase-go"
+	"github.com/TylerAldrich814/TermLink/utils"
+	sb "github.com/supabase-community/supabase-go"
 )
 
 const (
-  fakeLogin = true
+  fakeLogin = false
   fakeUsers = false
   fakseMsgs = false
 )
 
-type Supabase  struct {
-  client       *supabase.Client
+type Database  struct {
+  sqlite       *sql.DB
+  supabase     *sb.Client
   url          string
   anonKey      string
   userID       string
@@ -24,28 +26,34 @@ type Supabase  struct {
   authChannel  chan struct{}
 }
 
-func InitSupbase(
+func InitDatabase(
   url     string,
   anonKey string,
-)( *Supabase, error ){
+)( *Database, error ){
   if len(url) == 0 {
     return nil, errors.New("Supabse URL failed to laod")
   }
   if len(anonKey) == 0 {
     return nil, errors.New("Supabse anonkey failed to laod")
   }
-  opts := supabase.ClientOptions {}
-  client, err := supabase.NewClient(
+  opts := sb.ClientOptions {}
+  client, err := sb.NewClient(
     url, 
     anonKey,
     &opts,
   )
   if err != nil {
-    return nil, errors.New("Failed to create Supabase Client")
+    return nil, errors.New("Failed to create Database Client")
   }
 
-  db := &Supabase{
-    client      : client,
+  sql, err := InitSQLite()
+  if err != nil {
+    return nil, err
+  }
+
+  db := &Database{
+    sqlite      : sql,
+    supabase    : client,
     url         : url,
     anonKey     : anonKey,
     userID      : "",
@@ -56,7 +64,7 @@ func InitSupbase(
   return db, nil
 }
 
-func(db *Supabase) TrySession() error {
+func(db *Database) TrySession() error {
   session, err := LoadUserSession()
   if err == nil {
     utils.Warn("Session Found: %s", session.RefreshToken)
@@ -72,7 +80,7 @@ func(db *Supabase) TrySession() error {
         db.authChannel <-struct{}{}
       }()
     } else {
-      utils.Error("AUTH ERROR : %v", err)
+      utils.Error("AUTH ERROR : %w", err)
     }
   }
 
@@ -81,16 +89,16 @@ func(db *Supabase) TrySession() error {
   return nil
 }
 
-func(client *Supabase) RefreshTokens() error {
+func(supabase *Database) RefreshTokens() error {
 
   return nil
 }
 
-func(db *Supabase) GetAuthChannel() chan struct{} {
+func(db *Database) GetAuthChannel() chan struct{} {
   return db.authChannel
 }
 
-func(db *Supabase) CloseAuthChannel()  {
+func(db *Database) CloseAuthChannel()  {
   if db.authChannel != nil {
     utils.Warn("Supbase.AuthChannel is now closed")
     close(db.authChannel)

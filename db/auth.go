@@ -7,14 +7,14 @@ import (
 	"github.com/supabase-community/gotrue-go/types"
 )
 
-func(db *Supabase) Signup(
+func(db *Database) Signup(
   email, password string,
 ) error {
   var creds types.SignupRequest 
   creds.Email = email
   creds.Password = password
 
-  _, err := db.client.Auth.Signup(creds)
+  _, err := db.supabase.Auth.Signup(creds)
   if err != nil {
     return err
   }
@@ -24,7 +24,7 @@ func(db *Supabase) Signup(
 
 // When an access Token is recovered. We can call this method to attempt a signin with the AccessToken.
 // If successful, we update our local accesstoken and continue
-func(db *Supabase) TokenSignin() error {
+func(db *Database) TokenSignin() error {
   if db.session == nil {
     return errors.New("User Session is not available")
   }
@@ -32,7 +32,7 @@ func(db *Supabase) TokenSignin() error {
     utils.Warn(" ->> BYPASSING SESSION LOGIN")
     return nil
   }
-  res, err := db.client.Auth.RefreshToken(
+  res, err := db.supabase.Auth.RefreshToken(
     db.session.RefreshToken,
   )
 
@@ -45,15 +45,15 @@ func(db *Supabase) TokenSignin() error {
   }
   db.userID = res.User.ID.String()
 
-  db.client.UpdateAuthSession(res.Session)
-  db.client.EnableTokenAutoRefresh(res.Session)
+  db.supabase.UpdateAuthSession(res.Session)
+  db.supabase.EnableTokenAutoRefresh(res.Session)
   db.authChannel <- struct{}{}
 
   return nil
 }
 
-func(db *Supabase) Login(email, password string) error {
-  res, err := db.client.Auth.SignInWithEmailPassword(email, password)
+func(db *Database) Login(email, password string) error {
+  res, err := db.supabase.Auth.SignInWithEmailPassword(email, password)
   if err != nil {
     return err
   }
@@ -61,24 +61,24 @@ func(db *Supabase) Login(email, password string) error {
   if err := db.session.UpdateCurrentSession(res); err != nil {
     return err
   }
-  db.client.UpdateAuthSession(res.Session)
-  db.client.EnableTokenAutoRefresh(res.Session)
+  db.supabase.UpdateAuthSession(res.Session)
+  db.supabase.EnableTokenAutoRefresh(res.Session)
   db.authChannel <- struct{}{}
 
   return nil
 }
 
-func(db *Supabase) Signout() error {
+func(db *Database) Signout() error {
   if fakeLogin {
     return nil
   }
 
-  if err := db.client.Auth.Logout(); err != nil {
-    utils.Error("Failed to log user out: %v", err)
+  if err := db.supabase.Auth.Logout(); err != nil {
+    utils.Error("Failed to log user out: %w", err)
     return errors.New("Logout Failure")
   }
   if err := db.session.StoreLoggedoutSession(); err != nil {
-    utils.Error("Failed to store Loggedout Session: %v", err)
+    utils.Error("Failed to store Loggedout Session: %w", err)
     return errors.New("Store Logged Out Session Error")
   }
 
