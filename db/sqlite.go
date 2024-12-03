@@ -14,38 +14,6 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// const DBSYNC = `
-//   CREATE TABLE IF NOT EXISTS db_sync (
-//     key         TEXT PRIMARY KEY,
-//     last_synced DATETIME,
-//   );
-// `
-// const CONVERSATION = `
-//   CREATE TABLE IF NOT EXISTS conversations (
-//     id                TEXT PRIMARY KEY,
-//     created_at        DATETIME,
-//     type              TEXT NOT NULL CHECK (type in ('direct', 'group')),
-//     user_id           TEXT,
-//     last_sent_user_id TEXT,
-//     other_user_id     TEXT,
-//   );
-// `
-// const MESSAGES = `
-//   CREATE TABLE IF NOT EXISTS messages (
-//     id              TEXT     PRIMARY KEY,
-//     conversation_id TEXT,
-//     sender_id       TEXT,
-//     content         TEXT,
-//     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
-//   );
-// `
-// const CONTACT = `
-//   CREATE TABLE IF NOT EXISTS contact (
-//     id       TEXT PRIMARY KEY,
-//     username TEXT,
-//     status   TEXT NOT NULL CHECK (status in ('active', 'inactive', 'away'))
-//   );
-// `
 const (
   schemaDir = "./schemas"
 )
