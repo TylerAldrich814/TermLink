@@ -115,6 +115,18 @@ func(d *DebugWindow) Stop() {
   }
 }
 
+// Drumps all logged messages before the application closes
+func( d *DebugWindow) Dump(){
+  for i, m := range d.Messages {
+    fmt.Printf(
+      "[%d] %s - %s\n",
+      i, 
+      m.time.Format("15:04:05:10"),
+      m.message,
+    )
+  }
+}
+
 func(d *DebugWindow) log(message LogMessage) {
   d.LogChannel <-message
 }

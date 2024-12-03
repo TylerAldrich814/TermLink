@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/TylerAldrich814/TermLink/utils"
+	"github.com/common-nighthawk/go-figure"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -149,10 +150,36 @@ func(auth *AuthPage) GenerateUI() tview.Primitive{
 
   auth.form = page
 
-  return utils.CenterUIComponent(
-    page,
-    50,
-  ) 
+  termLink := tview.NewTextView().
+    SetDynamicColors(true).
+    SetTextAlign(tview.AlignCenter).
+    SetText(figure.NewFigure("TermLink", "", true).String())
+  termLink.SetTextColor(tcell.ColorRed)
+
+
+  formView := tview.NewFlex().
+     AddItem(tview.NewBox(), 0, 1, false).
+     AddItem(
+       tview.NewFlex().
+         SetDirection(tview.FlexRow).
+         AddItem(page, 15, 0, false).
+         AddItem(tview.NewBox(), 0, 1, false),
+       0, 1, false,
+     ).
+     AddItem(tview.NewBox(), 0, 1, false)
+
+
+  view := tview.NewFlex().
+    SetDirection(tview.FlexRow).
+    AddItem(tview.NewBox(), 10, 0, false).
+    AddItem(termLink, 0, 1, false).
+    AddItem(
+      formView,
+      0, 3, false,
+    ).
+    AddItem(tview.NewBox(), 0, 1, false)
+
+  return view
 }
 
 func(auth *AuthPage) StartFocus() tview.Primitive {
@@ -219,12 +246,13 @@ func GetAuthPage(
     app  : tui,
     kind : kind,
   }
+  width := 48
   auth.emailForm = tview.NewInputField().
     SetLabel("Email").
-    SetFieldWidth(26)
+    SetFieldWidth(width)
   auth.passwordForm = tview.NewInputField().
     SetLabel("Password").
-    SetFieldWidth(26).
+    SetFieldWidth(width).
     SetMaskCharacter('*')
 
   auth.submitButton = tview.NewButton(kind.String()).

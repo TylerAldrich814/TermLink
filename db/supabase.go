@@ -53,28 +53,32 @@ func InitSupbase(
     authChannel : make(chan struct{}),
   }
 
+  return db, nil
+}
+
+func(db *Supabase) TrySession() error {
   session, err := LoadUserSession()
   if err == nil {
-    if fakeLogin {
-      go func(){
-        time.Sleep(100*time.Millisecond)
-        db.authChannel <- struct{}{}
-      }()
-    } else {
+    utils.Warn("Session Found: %s", session.RefreshToken)
+    db.session = session
+
+    err = db.TokenSignin()
+    if err == nil {
       session.StartAutoTokenRefresh(
         db,
         5 * time.Minute,
       )
       go func(){
-        // TODO: Make Token Refresh Call to Supbase
         db.authChannel <-struct{}{}
       }()
+    } else {
+      utils.Error("AUTH ERROR : %v", err)
     }
   }
 
   db.session = session
 
-  return db, nil
+  return nil
 }
 
 func(client *Supabase) RefreshTokens() error {
@@ -85,6 +89,7 @@ func(client *Supabase) RefreshTokens() error {
 func(db *Supabase) GetAuthChannel() chan struct{} {
   return db.authChannel
 }
+
 func(db *Supabase) CloseAuthChannel()  {
   if db.authChannel != nil {
     utils.Warn("Supbase.AuthChannel is now closed")

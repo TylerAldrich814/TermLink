@@ -6,4 +6,10 @@ type Contact struct {
   Status    Status `json:"status"`
 }
 
+type Contacts struct {
+  ID        string `json:"id"`
+  UserID    string `json:"user_id"`
+  Contacts  []User `json:"contacts"`
+}
+
 //TODO: Create Database Access methods for getting updated Contact information

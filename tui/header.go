@@ -39,34 +39,34 @@ func GetHeaderDropdown(
 ) *HeaderDropdown {
   title := "[green]▼ [teal]TermLink[:]"
 
-  newMsgBullet := utils.Bullet(
+  newMsgBullet := utils.GetBullet(
     " New Message  ",
     "green",
     "black",
   )
-  inboxBullet := utils.Bullet(
+  inboxBullet := utils.GetBullet(
     " Inbox        ",
     "teal",
     "black",
   )
-  contactsBullet := utils.Bullet(
+  contactsBullet := utils.GetBullet(
     " Contacts     ",
     "green",
     "black",
   )
-  chatroomsBullet := utils.Bullet(
+  chatroomsBullet := utils.GetBullet(
     " Chatrooms    ",
     "teal",
     "black",
   )
-  settingsBullet := utils.Bullet(
+  settingsBullet := utils.GetBullet(
     " Settings     ",
     "green",
     "black",
   )
 
   curPage := app.currentPage
-  utils.Warn("Current PAge: %s", curPage.String())
+  utils.Warn("Current Page: %s", curPage.String())
   switch curPage.String() {
   case pNewMessage.String():
     newMsgBullet.UpdateColors(
@@ -181,20 +181,23 @@ func GetHeader(
   btnSpacer := tview.NewTextView().
     SetDynamicColors(true).
     SetTextAlign(tview.AlignCenter).
-    SetText("[teal]｜[:]")
+    SetText("[teal]┃[:]")
+    // SetText("[teal]｜[:]")
 
-  helpText := utils.Bullet(
-    "    Help    ",
+  helpText := utils.BuildBullet(
+    utils.LeftBullet,
+    "  Help  ",
     "green",
     "black",
   )
-  closeText := utils.Bullet(
+  closeText := utils.GetBlock(
     " Close ",
     "green",
     "black",
   )
-  logoutText := utils.Bullet(
-    "Logout",
+  logoutText := utils.BuildBullet(
+    utils.RightBullet,
+    " Logout ",
     "green",
     "black",
   )
@@ -221,6 +224,8 @@ func GetHeader(
             header.app.ResetMainRoot()
           },
         ))
+      } else {
+        header.app.ChangePage(pAuth)
       }
     }).
     SetStyle(btnStyle)
@@ -241,9 +246,9 @@ func GetHeader(
       tview.NewFlex().
         AddItem(tview.NewBox(), 0, 1, false).
         AddItem(helpBtn, helpText.Length(), 0 ,false).
-        AddItem(btnSpacer, 2, 0, false).
+        AddItem(btnSpacer, 1, 0, false).
         AddItem(closeBtn, closeText.Length(), 0, false).
-        AddItem(btnSpacer, 2, 0, false).
+        AddItem(btnSpacer, 1, 0, false).
         AddItem(logoutBtn, logoutText.Length(), 0, false).
         AddItem(tview.NewBox(), 2, 0, false),
       0, 1, false,

@@ -1,7 +1,22 @@
 package components
 
-import "github.com/TylerAldrich814/TermLink/db"
+import (
+	"github.com/TylerAldrich814/TermLink/db"
+	"github.com/TylerAldrich814/TermLink/utils"
+)
 
+func StatusColor(status *db.Status)(string, int){
+  switch status.String() {
+  case "active": 
+    return "lightgreen", len("lightgreen")
+  case "away":
+    return "yellow",     len("yellow")
+  case "inactive":
+    return "darkorange", len("darkorange")
+  default:
+    return "red",        len("red")
+  }
+}
 
 func StatusView(status *db.Status) string {
   switch status.String() {
@@ -16,16 +31,15 @@ func StatusView(status *db.Status) string {
   }
 }
 
-func StatusBullet(status *db.Status) string {
-  symbol := "⬤ "
+func StatusBullet(status *db.Status)(string, int){
   switch status.String() {
   case "active": 
-    return "[lightgreen]"+symbol
+    return "[lightgreen]"+utils.FullCircle, len("[lightgreen]")
   case "away":
-    return "[yellow]"+symbol
+    return "[yellow]"+utils.FullCircle, len("[yellow]")
   case "inactive":
-    return "[darkorange]"+symbol
+    return "[darkorange]"+utils.FullCircle, len("[darkorange]")
   default:
-    return "[red]"+symbol
+    return "[red]"+utils.FullCircle, len("[red]")
   }
 }

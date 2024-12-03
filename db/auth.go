@@ -25,9 +25,17 @@ func(db *Supabase) Signup(
 // When an access Token is recovered. We can call this method to attempt a signin with the AccessToken.
 // If successful, we update our local accesstoken and continue
 func(db *Supabase) TokenSignin() error {
+  if db.session == nil {
+    return errors.New("User Session is not available")
+  }
+  if fakeLogin {
+    utils.Warn(" ->> BYPASSING SESSION LOGIN")
+    return nil
+  }
   res, err := db.client.Auth.RefreshToken(
-    db.session.AccessToken,
+    db.session.RefreshToken,
   )
+
   if err != nil {
     return err
   }
@@ -35,6 +43,7 @@ func(db *Supabase) TokenSignin() error {
   if err := db.session.UpdateCurrentSession(res); err != nil {
     return err
   }
+  db.userID = res.User.ID.String()
 
   db.client.UpdateAuthSession(res.Session)
   db.client.EnableTokenAutoRefresh(res.Session)
@@ -60,6 +69,10 @@ func(db *Supabase) Login(email, password string) error {
 }
 
 func(db *Supabase) Signout() error {
+  if fakeLogin {
+    return nil
+  }
+
   if err := db.client.Auth.Logout(); err != nil {
     utils.Error("Failed to log user out: %v", err)
     return errors.New("Logout Failure")

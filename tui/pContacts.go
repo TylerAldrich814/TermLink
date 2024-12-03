@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/TylerAldrich814/TermLink/components"
 	"github.com/TylerAldrich814/TermLink/db"
@@ -10,17 +11,55 @@ import (
 	"github.com/rivo/tview"
 )
 
+const (
+  maxTagLength       = 30
+  defaultBorderColor = int32(0x857048)
+  focusedBorderColor = int32(0x4d2929)
+)
+
 type ContactItem struct {
   app        *TermLinkTUI
   contact    *db.Contact
   view       *tview.Flex
-  dotStatus  *tview.TextView
-  username   *tview.TextView
+
+  tagView    *tview.TextView
   spacer     *tview.Box
   textStatus *tview.TextView
 
+  username   string
+  bullet     *utils.BulletItem
   contactCB  func(contact *db.Contact)
   kill       chan struct{}
+}
+
+func(c *ContactItem) CreateTag(focused bool) {
+  statusBullet, offset := components.StatusBullet(&c.contact.Status)
+  username := fmt.Sprintf(
+    "%s  %s",
+    statusBullet,
+    c.contact.Username,
+  )
+
+  ulen := len(username)-offset
+
+  if ulen < maxTagLength {
+    pad := strings.Repeat(" ", maxTagLength -ulen)
+    username = username + pad
+  }
+
+  c.username = username
+  c.bullet = utils.BuildBullet(
+    utils.LeftBullet,
+    username,
+    fmt.Sprintf(
+      "#%x",
+      func()int32{
+        if focused { return focusedBorderColor}
+        return defaultBorderColor
+      }(),
+    ),
+    "black",
+  )
 }
 
 func NewContactItem(
@@ -35,55 +74,57 @@ func NewContactItem(
     kill    : kill,
     contactCB: contactCB,
   }
-  c.dotStatus = tview.NewTextView().
+
+  c.CreateTag(false)
+
+  c.tagView = tview.NewTextView().
     SetDynamicColors(true).
-    SetTextAlign(tview.AlignCenter).
-    SetText(" " + components.StatusBullet(&contact.Status))
-  c.username = tview.NewTextView().
-    SetDynamicColors(true).
-    SetTextAlign(tview.AlignCenter).
-    SetText(fmt.Sprintf("[green]%s[:]", contact.Username))
-  c.spacer = tview.NewBox()
+    SetTextAlign(tview.AlignLeft).
+    SetText(c.bullet.Item())
+
+  c.spacer = tview.NewBox().
+    SetBackgroundColor(
+      tcell.NewHexColor(defaultBorderColor),
+    )
+
   c.textStatus = tview.NewTextView().
     SetDynamicColors(true).
     SetTextAlign(tview.AlignCenter).
     SetText(fmt.Sprintf(
-      "[teal][[:]%s[:][teal]]",
+      "[teal][[:]%s[:][teal]] ",
       components.StatusView(&contact.Status),
     ))
+  c.textStatus.SetBackgroundColor(tcell.NewHexColor(defaultBorderColor))
+
   c.view = tview.NewFlex().
-    AddItem(c.dotStatus, 3, 0, false).
-    AddItem(c.username, len(contact.Username)+4, 0, false).
+    AddItem(c.tagView, maxTagLength, 0, false).
     AddItem(c.spacer, 0, 1, false).
-    AddItem(c.textStatus, len(contact.Status.String())+2, 1, false)
+    AddItem(c.textStatus, len(contact.Status.String())+3, 1, false)
 
   c.view.SetBorder(true)
+  c.view.SetBorderColor(tcell.NewHexColor(defaultBorderColor))
+
 
   return c
 }
 
 func(c *ContactItem) selectedCallback(focused bool) {
   if focused {
-    c.username.
-      SetText(fmt.Sprintf("[orange]%s[:]", c.contact.Username))
-    focusedColor := tcell.ColorDarkGreen
-
-    c.dotStatus.SetBackgroundColor(focusedColor)
-    c.username.SetBackgroundColor(focusedColor)
-    c.textStatus.SetBackgroundColor(focusedColor)
-    c.spacer.SetBackgroundColor(focusedColor)
-    c.view.SetBackgroundColor(focusedColor)
+    c.view.SetBorderColor(
+      tcell.NewHexColor(focusedBorderColor),
+    )
 
     c.contactCB(c.contact)
+    c.CreateTag(true)
+    c.tagView.SetText(c.bullet.Item())
+    c.spacer.SetBackgroundColor(tcell.NewHexColor(focusedBorderColor))
+    c.textStatus.SetBackgroundColor(tcell.NewHexColor(focusedBorderColor))
   } else {
-    c.username.
-      SetText(fmt.Sprintf("[green]%s[:]", c.contact.Username))
-
-    c.dotStatus.SetBackgroundColor(tcell.ColorNone)
-    c.username.SetBackgroundColor(tcell.ColorNone)
-    c.textStatus.SetBackgroundColor(tcell.ColorNone)
-    c.spacer.SetBackgroundColor(tcell.ColorNone)
-    c.view.SetBackgroundColor(tcell.ColorNone)
+    c.view.SetBorderColor(tcell.NewHexColor(defaultBorderColor))
+    c.CreateTag(false)
+    c.tagView.SetText(c.bullet.Item())
+    c.spacer.SetBackgroundColor(tcell.NewHexColor(defaultBorderColor))
+    c.textStatus.SetBackgroundColor(tcell.NewHexColor(defaultBorderColor))
   }
 }
 
@@ -95,6 +136,7 @@ type ContactsPage struct {
   contacts       []*ContactItem
 
   contactBody    *tview.Flex
+
 
   visibleContact *db.Contact
 
@@ -109,7 +151,6 @@ func(c *ContactsPage) contactsPanel() *tview.Flex {
     SetItemSize(3)
 
   for _, contact := range c.contacts {
-    utils.Warn("Creating Contact: %s", contact.contact.Username)
     c.contactList.AddItemWithSelectedFunc(
       contact.view,
       contact.selectedCallback,
@@ -118,7 +159,6 @@ func(c *ContactsPage) contactsPanel() *tview.Flex {
 
   c.view.SetDirection(tview.FlexRow).
     AddItem(c.header.header, 5, 0, false)
-
 
   contacts := tview.NewFlex().
     AddItem(tview.NewBox(), 2, 0, false).
@@ -130,14 +170,50 @@ func(c *ContactsPage) contactsPanel() *tview.Flex {
   return contacts
 }
 
+// Updates the Contact Body for when a Contact List item is selected in the contact List panel
 func(c *ContactsPage) updateBody(contact *db.Contact) {
   c.visibleContact = contact
   if contact == nil {
     c.contactBody.Clear().
       SetTitle("Contacts")
   } else {
+    topPad := 2
+    botPad := 3
+
+    info := tview.NewTextView().
+      SetTextAlign(tview.AlignCenter).
+      SetDynamicColors(true).
+      SetText(contact.Username)
+
+    info.SetBorder(true)
+    infoContainer := tview.NewFlex().
+      SetDirection(tview.FlexRow).
+      AddItem(tview.NewBox(), topPad, 0, false).
+      AddItem(
+        info,
+        0, 1, false,
+      ).
+      AddItem(tview.NewBox(), botPad, 0, false)
+
+    msgs := tview.NewFlex()
+
+    msgs.SetBorder(true)
+    msgContainer := tview.NewFlex().
+      SetDirection(tview.FlexRow).
+      AddItem(tview.NewBox(), topPad, 0, false).
+      AddItem(
+        msgs,
+        0, 1, false,
+      ).
+      AddItem(tview.NewBox(), botPad, 0, false)
+
     c.contactBody.Clear().
-      SetTitle(c.visibleContact.Username)
+      AddItem(
+        tview.NewFlex().
+          AddItem(infoContainer, 0, 2, false).
+          AddItem(msgContainer, 0, 3, false),
+        0, 1, false,
+      )
   }
 }
 
@@ -158,7 +234,6 @@ func(c *ContactsPage) GenerateUI() tview.Primitive {
     )
 
   body.SetBorder(true)
-  body.SetTitle(" Contacts ")
 
   wrapped := tview.NewFlex().
     AddItem(tview.NewBox(), 4, 0, false).

@@ -108,6 +108,7 @@ func(tui *TermLinkTUI) Stop(){
   tui.app.Stop()
   if tui.debugWindow != nil {
     tui.debugWindow.Stop()
+    tui.debugWindow.Dump()
   }
 }
 
@@ -160,8 +161,15 @@ func GetTermLinkTUI(
     debugWindow : utils.GetInstance(),
   }
 
+  go func(){
+    err := db.TrySession()
+    if err != nil {
+      utils.Error("Failed to obtain User Session: %v", err)
+    }
+  }()
+
   tl.rootWindow.
-    AddItem(tl.pages, 0, 2, true)
+    AddItem(tl.pages, 0, 3, true)
 
   if tl.debugWindow != nil {
     debug := tview.NewFlex().
